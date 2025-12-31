@@ -1,0 +1,374 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 用户表
+model User {
+  id            String    @id @default(uuid())
+  phone         String?   @unique
+  phoneVerified Boolean   @default(false) @map("phone_verified")
+  wxOpenid      String?   @unique @map("wx_openid")
+  wxUnionid     String?   @map("wx_unionid")
+  nickname      String?   @db.VarChar(50)
+  avatarUrl     String?   @map("avatar_url") @db.VarChar(500)
+  gender        Int?      @db.SmallInt // 0未知 1男 2女
+  isVip         Boolean   @default(false) @map("is_vip")
+  vipExpireAt   DateTime? @map("vip_expire_at")
+  inviteCode    String    @unique @map("invite_code") @db.VarChar(10)
+  invitedBy     String?   @map("invited_by")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  lastLoginAt   DateTime? @map("last_login_at")
+  status        Int       @default(1) @db.SmallInt // 1正常 0禁用
+
+  // Relations
+  inviter               User?                 @relation("InviteRelation", fields: [invitedBy], references: [id])
+  invitees              User[]                @relation("InviteRelation")
+  birthInfo             BirthInfo?
+  natalChart            NatalChart?
+  friendshipsAsUser     Friendship[]          @relation("UserFriendships")
+  friendshipsAsFriend   Friendship[]          @relation("FriendFriendships")
+  compatibilityAsUser   CompatibilityReport[] @relation("UserCompatibility")
+  compatibilityAsFriend CompatibilityReport[] @relation("FriendCompatibility")
+  dailyHoroscopes       DailyHoroscope[]
+  memberships           Membership[]
+  purchases             Purchase[]
+  invitationsSent       Invitation[]          @relation("InviterRelation")
+  invitationsReceived   Invitation[]          @relation("InviteeRelation")
+
+  @@index([phone])
+  @@index([wxOpenid])
+  @@index([inviteCode])
+  @@map("users")
+}
+
+// 出生信息表
+model BirthInfo {
+  id            String   @id @default(uuid())
+  userId        String   @unique @map("user_id")
+  birthDate     DateTime @map("birth_date") @db.Date
+  birthTime     DateTime @map("birth_time") @db.Time()
+  birthCity     String   @map("birth_city") @db.VarChar(100)
+  birthProvince String?  @map("birth_province") @db.VarChar(50)
+  birthCountry  String   @default("中国") @map("birth_country") @db.VarChar(50)
+  latitude      Decimal  @db.Decimal(10, 7)
+  longitude     Decimal  @db.Decimal(10, 7)
+  timezone      String   @default("Asia/Shanghai") @db.VarChar(50)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("birth_info")
+}
+
+// 星盘数据表
+model NatalChart {
+  id           String   @id @default(uuid())
+  userId       String   @unique @map("user_id")
+
+  // 三大星座
+  sunSign      String   @map("sun_sign") @db.VarChar(20)
+  sunDegree    Decimal? @map("sun_degree") @db.Decimal(5, 2)
+  moonSign     String   @map("moon_sign") @db.VarChar(20)
+  moonDegree   Decimal? @map("moon_degree") @db.Decimal(5, 2)
+  risingSign   String   @map("rising_sign") @db.VarChar(20)
+  risingDegree Decimal? @map("rising_degree") @db.Decimal(5, 2)
+
+  // 其他行星位置（JSON存储）
+  planets      Json     // {"mercury": {"sign": "双子座", "degree": 12.5, "house": 3}, ...}
+
+  // 宫位
+  houses       Json     // {"1": {"sign": "狮子座", "degree": 5.3}, ...}
+
+  // 相位
+  aspects      Json?    // [{"planet1": "sun", "planet2": "moon", "aspect": "trine", "degree": 120}, ...]
+
+  // 元素和模式统计
+  elementFire    Int @default(0) @map("element_fire") @db.SmallInt
+  elementEarth   Int @default(0) @map("element_earth") @db.SmallInt
+  elementAir     Int @default(0) @map("element_air") @db.SmallInt
+  elementWater   Int @default(0) @map("element_water") @db.SmallInt
+  modeCardinal   Int @default(0) @map("mode_cardinal") @db.SmallInt
+  modeFixed      Int @default(0) @map("mode_fixed") @db.SmallInt
+  modeMutable    Int @default(0) @map("mode_mutable") @db.SmallInt
+
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sunSign])
+  @@map("natal_charts")
+}
+
+// 好友关系表
+model Friendship {
+  id                 String   @id @default(uuid())
+  userId             String   @map("user_id")
+  friendId           String   @map("friend_id")
+  status             Int      @default(1) @db.SmallInt // 1正常 0已删除
+  compatibilityScore Int?     @map("compatibility_score") @db.SmallInt // 0-100
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user   User @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("FriendFriendships", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+  @@map("friendships")
+}
+
+// 配对报告表
+model CompatibilityReport {
+  id        String @id @default(uuid())
+  userId    String @map("user_id")
+  friendId  String @map("friend_id")
+
+  // 总分
+  totalScore Int @map("total_score") @db.SmallInt // 0-100
+
+  // 各维度分数
+  overallHarmony Int? @map("overall_harmony") @db.SmallInt
+  communication  Int? @db.SmallInt
+  emotion        Int? @db.SmallInt
+  values         Int? @db.SmallInt
+  attraction     Int? @db.SmallInt
+  conflict       Int? @db.SmallInt
+  growth         Int? @db.SmallInt
+
+  // 详细内容（AI生成）
+  summary     String? @db.Text // 200字总结
+  details     Json?   // 各维度详细分析
+  suggestions Json?   // 相处建议
+
+  // 是否已购买
+  isPurchased Boolean   @default(false) @map("is_purchased")
+  purchasedAt DateTime? @map("purchased_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user   User @relation("UserCompatibility", fields: [userId], references: [id])
+  friend User @relation("FriendCompatibility", fields: [friendId], references: [id])
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+  @@map("compatibility_reports")
+}
+
+// 每日运势表
+model DailyHoroscope {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  date         DateTime @db.Date
+
+  // 运势内容
+  summary      String   @db.Text // 100-150字
+
+  // 五维评分 0-100
+  scoreOverall Int      @map("score_overall") @db.SmallInt
+  scoreLove    Int      @map("score_love") @db.SmallInt
+  scoreCareer  Int      @map("score_career") @db.SmallInt
+  scoreWealth  Int      @map("score_wealth") @db.SmallInt
+  scoreSocial  Int      @map("score_social") @db.SmallInt
+
+  // 今日宜忌
+  doList   Json? @map("do_list")   // ["表白", "签合同", "运动"]
+  dontList Json? @map("dont_list") // ["熬夜", "冲动消费"]
+
+  // 幸运元素
+  luckyColor     String? @map("lucky_color") @db.VarChar(20)
+  luckyNumber    Int?    @map("lucky_number") @db.SmallInt
+  luckyDirection String? @map("lucky_direction") @db.VarChar(20)
+  luckyTime      String? @map("lucky_time") @db.VarChar(20)
+
+  // 是否个性化（基于完整星盘）
+  isPersonalized Boolean @default(false) @map("is_personalized")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId, date])
+  @@index([date])
+  @@map("daily_horoscopes")
+}
+
+// 会员表
+model Membership {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  plan           String   @db.VarChar(20) // monthly/quarterly/yearly
+  price          Decimal  @db.Decimal(10, 2)
+  startDate      DateTime @map("start_date")
+  endDate        DateTime @map("end_date")
+  status         String   @default("active") @db.VarChar(20) // active/expired/cancelled
+  paymentChannel String?  @map("payment_channel") @db.VarChar(20) // wechat/apple
+  transactionId  String?  @map("transaction_id") @db.VarChar(100)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@map("memberships")
+}
+
+// 购买记录表
+model Purchase {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  productType    String   @map("product_type") @db.VarChar(50) // compatibility_report/deep_chart/yearly_report
+  productId      String?  @map("product_id")
+  price          Decimal  @db.Decimal(10, 2)
+  paymentChannel String?  @map("payment_channel") @db.VarChar(20) // wechat/apple
+  transactionId  String?  @map("transaction_id") @db.VarChar(100)
+  status         String   @default("completed") @db.VarChar(20) // pending/completed/refunded
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([productType])
+  @@map("purchases")
+}
+
+// 邀请记录表
+model Invitation {
+  id           String    @id @default(uuid())
+  inviterId    String    @map("inviter_id")
+  inviteCode   String    @map("invite_code") @db.VarChar(10)
+  inviteeId    String?   @map("invitee_id")
+  inviteePhone String?   @map("invitee_phone") @db.VarChar(20)
+  status       String    @default("pending") @db.VarChar(20) // pending/registered/rewarded
+  rewardGiven  Boolean   @default(false) @map("reward_given")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  registeredAt DateTime? @map("registered_at")
+
+  // Relations
+  inviter User  @relation("InviterRelation", fields: [inviterId], references: [id])
+  invitee User? @relation("InviteeRelation", fields: [inviteeId], references: [id])
+
+  @@index([inviterId])
+  @@index([inviteCode])
+  @@map("invitations")
+}
+
+// 验证码表
+model VerificationCode {
+  id        String   @id @default(uuid())
+  phone     String   @db.VarChar(20)
+  code      String   @db.VarChar(6)
+  type      String   @db.VarChar(20) // login/register/bindPhone
+  expiresAt DateTime @map("expires_at")
+  isUsed    Boolean  @default(false) @map("is_used")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([phone])
+  @@index([expiresAt])
+  @@map("verification_codes")
+}
+
+// 城市数据表
+model City {
+  id        Int     @id @default(autoincrement())
+  name      String  @db.VarChar(50)
+  province  String? @db.VarChar(50)
+  country   String  @default("中国") @db.VarChar(50)
+  latitude  Decimal @db.Decimal(10, 7)
+  longitude Decimal @db.Decimal(10, 7)
+  timezone  String  @default("Asia/Shanghai") @db.VarChar(50)
+  pinyin    String? @db.VarChar(100)
+  isHot     Boolean @default(false) @map("is_hot")
+
+  @@index([name])
+  @@index([pinyin])
+  @@index([isHot])
+  @@map("cities")
+}
+
+// 订单表（用于支付）
+model Order {
+  id             String    @id @default(uuid())
+  userId         String    @map("user_id")
+  productType    String    @map("product_type") @db.VarChar(50)
+  productId      String?   @map("product_id")
+  amount         Int       // 金额（分）
+  payChannel     String    @map("pay_channel") @db.VarChar(20) // wechat/apple
+  status         String    @default("pending") @db.VarChar(20) // pending/paid/failed/refunded
+  transactionId  String?   @map("transaction_id") @db.VarChar(100)
+  signature      String?   @db.VarChar(64) // 订单签名防篡改
+  expireAt       DateTime  @map("expire_at")
+  paidAt         DateTime? @map("paid_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([status])
+  @@map("orders")
+}
+
+// 推送Token表
+model PushToken {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String   @db.VarChar(255)
+  platform  String   @db.VarChar(20) // ios/android
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([userId])
+  @@index([userId])
+  @@map("push_tokens")
+}
+
+// 推送设置表
+model PushSettings {
+  id             String   @id @default(uuid())
+  userId         String   @unique @map("user_id")
+  dailyHoroscope Boolean  @default(true) @map("daily_horoscope")
+  friendActivity Boolean  @default(true) @map("friend_activity")
+  promotions     Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("push_settings")
+}
+
+// 安全日志表
+model SecurityLog {
+  id        String   @id @default(uuid())
+  eventType String   @map("event_type") @db.VarChar(50)
+  severity  String   @db.VarChar(20) // high/medium/low
+  userId    String?  @map("user_id")
+  ip        String?  @db.VarChar(45)
+  userAgent String?  @map("user_agent") @db.VarChar(500)
+  details   Json?
+  timestamp DateTime @default(now())
+
+  @@index([eventType])
+  @@index([userId])
+  @@index([timestamp])
+  @@map("security_logs")
+}

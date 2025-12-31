@@ -1,0 +1,12 @@
+/// 服务导出文件
+export 'api_client.dart';
+export 'storage_service.dart';
+export 'auth_service.dart';
+export 'user_service.dart';
+export 'chart_service.dart';
+export 'horoscope_service.dart';
+export 'friend_service.dart';
+export 'compatibility_service.dart';
+export 'payment_service.dart';
+export 'city_service.dart';
+export 'share_service.dart';

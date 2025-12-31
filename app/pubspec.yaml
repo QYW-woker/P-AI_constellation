@@ -1,0 +1,86 @@
+name: star_app
+description: AI星座应用 - 专业星盘分析与社交分享平台
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # 状态管理
+  provider: ^6.1.1
+
+  # 网络请求
+  dio: ^5.4.0
+
+  # 本地存储
+  shared_preferences: ^2.2.2
+  flutter_secure_storage: ^9.0.0
+
+  # UI组件
+  cupertino_icons: ^1.0.6
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
+
+  # 图表和绘制
+  fl_chart: ^0.66.0
+
+  # 动画
+  flutter_animate: ^4.3.0
+  lottie: ^3.0.0
+
+  # 工具类
+  intl: ^0.18.1
+  uuid: ^4.2.2
+
+  # 第三方登录
+  fluwx: ^4.5.0
+  sign_in_with_apple: ^5.0.0
+
+  # 支付
+  tobias: ^3.0.0
+
+  # 推送
+  jpush_flutter: ^2.5.1
+
+  # 分享
+  share_plus: ^7.2.1
+
+  # 权限
+  permission_handler: ^11.1.0
+
+  # 图片处理
+  image_picker: ^1.0.7
+  image_cropper: ^5.0.1
+
+  # 路由
+  go_router: ^13.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.8
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/fonts/
+
+  fonts:
+    - family: PingFang
+      fonts:
+        - asset: assets/fonts/PingFang-Regular.ttf
+        - asset: assets/fonts/PingFang-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PingFang-Semibold.ttf
+          weight: 600
