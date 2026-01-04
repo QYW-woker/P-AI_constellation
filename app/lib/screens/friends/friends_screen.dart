@@ -100,8 +100,9 @@ class _FriendsScreenState extends State<FriendsScreen> {
   }
 
   Widget _buildFriendItem(Friend friend) {
-    final sunSignCN = friend.sunSign != null
-        ? AppConstants.zodiacChineseNames[friend.sunSign] ?? friend.sunSign
+    final sign = friend.sunSign;
+    final sunSignCN = sign != null
+        ? (AppConstants.zodiacChineseNames[sign] ?? sign)
         : '';
 
     return GestureDetector(
