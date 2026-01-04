@@ -23,34 +23,34 @@ if (flutterVersionName == null) {
 }
 
 android {
-    namespace = "com.example.constellation"
-    compileSdk = 35
-    ndkVersion = flutter.ndkVersion
+    namespace "com.example.constellation"
+    compileSdkVersion 35
+    ndkVersion flutter.ndkVersion
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
+        jvmTarget = "1.8"
     }
 
     defaultConfig {
-        applicationId = "com.example.constellation"
-        minSdk = 21
-        targetSdk = 35
-        versionCode = flutterVersionCode.toInteger()
-        versionName = flutterVersionName
+        applicationId "com.example.constellation"
+        minSdkVersion 21
+        targetSdkVersion 35
+        versionCode flutterVersionCode.toInteger()
+        versionName flutterVersionName
     }
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.debug
+            signingConfig signingConfigs.debug
         }
     }
 }
 
 flutter {
-    source = "../.."
+    source "../.."
 }
