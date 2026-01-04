@@ -42,6 +42,13 @@ android {
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+
+        // JPush配置 (测试用占位符，正式发布需替换为真实值)
+        manifestPlaceholders = [
+            JPUSH_PKGNAME: applicationId,
+            JPUSH_APPKEY: "your_jpush_appkey_here",
+            JPUSH_CHANNEL: "developer-default"
+        ]
     }
 
     buildTypes {
