@@ -42,6 +42,7 @@ android {
         targetSdkVersion 34
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        multiDexEnabled true
 
         // JPush配置 (测试用占位符，正式发布需替换为真实值)
         manifestPlaceholders = [
@@ -52,6 +53,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
         release {
             signingConfig signingConfigs.debug
         }
